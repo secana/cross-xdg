@@ -19,6 +19,12 @@ if ! echo "$1" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+$"; then
     exit 1
 fi
 
+# Check if on main branch
+if [ "$(git branch --show-current)" != "main" ]; then
+    echo "Error: Not on main branch"
+    exit 1
+fi
+
 # Check if the version is already in the Cargo.toml file
 if grep -qE "^version = \"$1\"" Cargo.toml; then
     echo "Error: Version $1 is already in Cargo.toml"
