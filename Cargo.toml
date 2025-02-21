@@ -10,6 +10,7 @@ readme = "README.md"
 keywords = ["xdg", "directory", "directories"]
 categories = ["filesystem"]
 authors = ["Stefan Hausotte"]
+documentation = "https://docs.rs/cross-xdg"
 
 [dependencies]
 

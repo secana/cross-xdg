@@ -26,6 +26,10 @@ All the other XDG directories are implemented in the same way in this crate.
 - `XDG_CONFIG_HOME` - User-specific configuration files
 - `XDG_RUNTIME_DIR` - User-specific runtime files
 
+## Documentation
+
+The documentation can be found on [docs.rs/cross-xdg](https://docs.rs/cross-xdg).
+
 ## Releated Projects
 
 There are several related projects that provide similar functionality, but do not conform to the XDG base directory specification. Instead they use platform-specific conventions.
