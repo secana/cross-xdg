@@ -3,6 +3,13 @@ name = "cross-xdg"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
+description = "Cross-platform XDG Base Directory Specification implementation"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/secana/cross-xdg"
+readme = "README.md"
+keywords = ["xdg", "directory", "directories"]
+categories = ["filesystem"]
+authors = ["Stefan Hausotte"]
 
 [dependencies]
 
