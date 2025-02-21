@@ -14,4 +14,4 @@ authors = ["Stefan Hausotte"]
 [dependencies]
 
 [dev-dependencies]
-serial_test = "*"
+serial_test = "3.2"
