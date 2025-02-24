@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Extension trait for `PathBuf` to help with common
 /// task on directories.
@@ -26,10 +26,10 @@ pub trait BaseDirsEx {
     fn create(&self) -> Result<PathBuf, std::io::Error>;
 }
 
-impl BaseDirsEx for PathBuf {
+impl<T: AsRef<Path>> BaseDirsEx for T {
     fn create(&self) -> Result<PathBuf, std::io::Error> {
         std::fs::create_dir_all(self)?;
-        Ok(self.to_path_buf())
+        Ok(self.as_ref().to_path_buf())
     }
 }
 
@@ -57,7 +57,7 @@ mod tests {
         set_var("XDG_CONFIG_HOME", "/tmp/config");
         let base_dirs = BaseDirs::with_prefix("prefix").unwrap();
 
-        let my_sub_config_dir = base_dirs.config_home().join("my_sub_dir").create().unwrap();
+        let my_sub_config_dir = base_dirs.config_home().create().unwrap();
 
         assert!(my_sub_config_dir.exists());
         std::fs::remove_dir_all(my_sub_config_dir).unwrap();
