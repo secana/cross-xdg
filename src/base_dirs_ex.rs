@@ -25,8 +25,9 @@ pub trait BaseDirsEx {
     /// ```
     fn create(&self) -> Result<PathBuf, std::io::Error>;
 
-    /// Copy the content of a file or directory to the directory.
+    /// Copy the content of a file to the directory.
     /// If the source is a file, it will be copied to the directory.
+    /// If the file already exists, it will be overwritten.
     /// The destination directory will be created if it does not exist.
     ///
     /// # Parameters
@@ -46,8 +47,35 @@ pub trait BaseDirsEx {
     /// let src = PathBuf::from("/tmp/src.txt");
     /// let my_sub_config_dir = base_dirs.config_home()
     ///    .join("my_sub_dir")
-    ///    .copy("dest.txt", src)
+    ///    .copy_over("dest.txt", src)
     ///    .unwrap();
+    /// ```
+    fn copy_over<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error>;
+
+    /// Copy the content of a file to the directory.
+    /// If the source is a file, it will be copied to the directory.
+    /// If the file already exists, it will *not* be overwritten.
+    /// The destination directory will be created if it does not exist.
+    /// The file will be created with the name specified in the `name` parameter.
+    ///
+    /// # Parameters
+    /// - `name`: The name of the file to create.
+    /// - `src`: The source file to copy.
+    ///
+    /// # Returns
+    /// The path of the file where the source was copied.
+    ///
+    /// # Examles
+    /// ```no_run
+    /// use cross_xdg::{BaseDirs, BaseDirsEx};
+    /// use std::path::PathBuf;
+    ///
+    /// let base_dirs = BaseDirs::new().unwrap();
+    /// let src = PathBuf::from("/tmp/src.txt");
+    /// let my_sub_config_dir = base_dirs.config_home()
+    ///   .join("my_sub_dir")
+    ///   .copy("dest.txt", src)
+    ///   .unwrap();
     /// ```
     fn copy<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error>;
 
@@ -81,7 +109,7 @@ impl<T: AsRef<Path>> BaseDirsEx for T {
         Ok(self.as_ref().to_path_buf())
     }
 
-    fn copy<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error> {
+    fn copy_over<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error> {
         let dir = self.create()?;
         let full_path = dir.join(name);
         std::fs::copy(&src, &full_path)?;
@@ -93,6 +121,15 @@ impl<T: AsRef<Path>> BaseDirsEx for T {
         let full_path = dir.join(name);
         std::fs::write(&full_path, src)?;
         Ok(full_path)
+    }
+
+    fn copy<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error> {
+        let dest = self.as_ref().join(name);
+        if dest.exists() {
+            Ok(dest)
+        } else {
+            self.copy_over(name, src)
+        }
     }
 }
 
@@ -110,7 +147,6 @@ mod tests {
 
         let my_sub_config_dir = base_dirs.config_home().join("my_sub_dir").create().unwrap();
 
-        assert!(my_sub_config_dir.exists());
         assert!(my_sub_config_dir.starts_with("/tmp/config/my_sub_dir"));
         std::fs::remove_dir_all(my_sub_config_dir).unwrap();
     }
@@ -123,14 +159,32 @@ mod tests {
 
         let my_sub_config_dir = base_dirs.config_home().create().unwrap();
 
-        assert!(my_sub_config_dir.exists());
         assert!(my_sub_config_dir.starts_with("/tmp/config/prefix"));
         std::fs::remove_dir_all(my_sub_config_dir).unwrap();
     }
 
     #[test]
     #[serial]
-    fn copy_file() {
+    fn copy_over_file() {
+        set_var("XDG_CONFIG_HOME", "/tmp/config");
+        let base_dirs = BaseDirs::new().unwrap();
+
+        let src = PathBuf::from("/tmp/src.txt");
+        std::fs::write(&src, b"Hello, World!").unwrap();
+
+        let my_sub_config_dir = base_dirs
+            .config_home()
+            .join("my_sub_dir")
+            .copy_over("hello.txt", &src)
+            .unwrap();
+
+        assert!(my_sub_config_dir.starts_with("/tmp/config/my_sub_dir/hello.txt"));
+        std::fs::remove_dir_all(my_sub_config_dir.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn copy_file_not_exists() {
         set_var("XDG_CONFIG_HOME", "/tmp/config");
         let base_dirs = BaseDirs::new().unwrap();
 
@@ -143,8 +197,25 @@ mod tests {
             .copy("hello.txt", &src)
             .unwrap();
 
-        assert!(my_sub_config_dir.exists());
         assert!(my_sub_config_dir.starts_with("/tmp/config/my_sub_dir/hello.txt"));
+        std::fs::remove_dir_all(my_sub_config_dir.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn copy_file_exists() {
+        set_var("XDG_CONFIG_HOME", "/tmp/config");
+        let base_dirs = BaseDirs::with_prefix("my_sub_dir").unwrap();
+        let my_sub_config_dir = base_dirs.config_home().create().unwrap();
+        let existing_file = my_sub_config_dir.join("old.txt");
+        std::fs::write(&existing_file, b"Old Content").unwrap();
+        let new_file = my_sub_config_dir.join("new.txt");
+        std::fs::write(&new_file, b"New Content").unwrap();
+
+        let my_sub_config_dir = base_dirs.config_home().copy("old.txt", &new_file).unwrap();
+
+        let content = std::fs::read(&existing_file).unwrap();
+        assert_eq!(content, b"Old Content");
         std::fs::remove_dir_all(my_sub_config_dir.parent().unwrap()).unwrap();
     }
 
@@ -159,7 +230,6 @@ mod tests {
             .save("hello.txt", b"Hello, World!")
             .unwrap();
 
-        assert!(my_file.exists());
         assert!(my_file.starts_with("/tmp/config/hello.txt"));
         std::fs::remove_file(my_file).unwrap();
     }
