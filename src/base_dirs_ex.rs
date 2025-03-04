@@ -50,7 +50,7 @@ pub trait BaseDirsEx {
     ///    .copy_over("dest.txt", src)
     ///    .unwrap();
     /// ```
-    fn copy_over<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error>;
+    fn copy_over(&self, name: &str, src: impl AsRef<Path>) -> Result<PathBuf, std::io::Error>;
 
     /// Copy the content of a file to the directory.
     /// If the source is a file, it will be copied to the directory.
@@ -77,7 +77,7 @@ pub trait BaseDirsEx {
     ///   .copy("dest.txt", src)
     ///   .unwrap();
     /// ```
-    fn copy<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error>;
+    fn copy(&self, name: &str, src: impl AsRef<Path>) -> Result<PathBuf, std::io::Error>;
 
     /// Write the content of a byte slice to a file in the directory.
     /// The destination directory will be created if it does not exist.
@@ -109,7 +109,7 @@ impl<T: AsRef<Path>> BaseDirsEx for T {
         Ok(self.as_ref().to_path_buf())
     }
 
-    fn copy_over<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error> {
+    fn copy_over(&self, name: &str, src: impl AsRef<Path>) -> Result<PathBuf, std::io::Error> {
         let dir = self.create()?;
         let full_path = dir.join(name);
         std::fs::copy(&src, &full_path)?;
@@ -123,7 +123,7 @@ impl<T: AsRef<Path>> BaseDirsEx for T {
         Ok(full_path)
     }
 
-    fn copy<P: AsRef<Path>>(&self, name: &str, src: P) -> Result<PathBuf, std::io::Error> {
+    fn copy(&self, name: &str, src: impl AsRef<Path>) -> Result<PathBuf, std::io::Error> {
         let dest = self.as_ref().join(name);
         if dest.exists() {
             Ok(dest)
