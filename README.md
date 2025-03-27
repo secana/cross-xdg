@@ -1,8 +1,5 @@
 # cross-xdg
 
-    THIS CRATE IS CURRENTLY WORK IN PROGRESS
-    There will be frequent breaking changes until the first 1.*.* release
-
 Use the [XDG base directory specification](https://specifications.freedesktop.org/basedir-spec/latest/) on Linux, Windows and Mac.
 
 The XDG base directory specification is a standard for storing user-specific configuration, data, cache and runtime files. It is used by many Linux applications and desktop environments, but is not widely supported on other platforms.
