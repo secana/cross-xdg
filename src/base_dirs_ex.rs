@@ -81,6 +81,7 @@ pub trait BaseDirsEx {
 
     /// Write the content of a byte slice to a file in the directory.
     /// The destination directory will be created if it does not exist.
+    /// If the file already exists, it will be overwritten.
     /// The file will be created with the name specified in the `name` parameter.
     ///
     /// # Parameters
@@ -97,10 +98,34 @@ pub trait BaseDirsEx {
     ///
     /// let base_dirs = BaseDirs::new().unwrap();
     /// let my_file = base_dirs.config_home()
-    ///   .save("hello.txt", b"Hello, World!")
+    ///   .write_over("hello.txt", b"Hello, World!")
     ///   .unwrap();
     /// ```
-    fn save(&self, name: &str, src: &[u8]) -> Result<PathBuf, std::io::Error>;
+    fn write_over(&self, name: &str, src: &[u8]) -> Result<PathBuf, std::io::Error>;
+
+    /// Write the content of a byte slice to a file in the directory.
+    /// The destination directory will be created if it does not exist.
+    /// If the file already exists, it will not be overwritten.
+    /// The file will be created with the name specified in the `name` parameter.
+    ///
+    /// # Parameters
+    /// - `name`: The name of the file to create.
+    /// - `src`: The content to write to the file.
+    ///
+    /// # Returns
+    /// The path of the file that was created.
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use cross_xdg::{BaseDirs, BaseDirsEx};
+    /// use std::path::PathBuf;
+    ///
+    /// let base_dirs = BaseDirs::new().unwrap();
+    /// let my_file = base_dirs.config_home()
+    ///   .write("hello.txt", b"Hello, World!")
+    ///   .unwrap();
+    /// ```
+    fn write(&self, name: &str, src: &[u8]) -> Result<PathBuf, std::io::Error>;
 }
 
 impl<T: AsRef<Path>> BaseDirsEx for T {
@@ -116,7 +141,7 @@ impl<T: AsRef<Path>> BaseDirsEx for T {
         Ok(dir.join(full_path))
     }
 
-    fn save(&self, name: &str, src: &[u8]) -> Result<PathBuf, std::io::Error> {
+    fn write_over(&self, name: &str, src: &[u8]) -> Result<PathBuf, std::io::Error> {
         let dir = self.create()?;
         let full_path = dir.join(name);
         std::fs::write(&full_path, src)?;
@@ -129,6 +154,15 @@ impl<T: AsRef<Path>> BaseDirsEx for T {
             Ok(dest)
         } else {
             self.copy_over(name, src)
+        }
+    }
+
+    fn write(&self, name: &str, src: &[u8]) -> Result<PathBuf, std::io::Error> {
+        let dest = self.as_ref().join(name);
+        if dest.exists() {
+            Ok(dest)
+        } else {
+            self.write_over(name, src)
         }
     }
 }
@@ -221,16 +255,83 @@ mod tests {
 
     #[test]
     #[serial]
-    fn save_file() {
+    fn write_over_file_exists() {
         set_var("XDG_CONFIG_HOME", "/tmp/config");
         let base_dirs = BaseDirs::new().unwrap();
 
         let my_file = base_dirs
             .config_home()
-            .save("hello.txt", b"Hello, World!")
+            .write_over("hello.txt", b"First")
+            .unwrap();
+        assert!(my_file.starts_with("/tmp/config/hello.txt"));
+
+        // Write again, should overwrite
+        let my_file2 = base_dirs
+            .config_home()
+            .write_over("hello.txt", b"Second")
+            .unwrap();
+        assert_eq!(my_file, my_file2);
+
+        let content = std::fs::read(&my_file).unwrap();
+        assert_eq!(content, b"Second");
+
+        std::fs::remove_file(my_file).unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn write_over_file_not_exists() {
+        set_var("XDG_CONFIG_HOME", "/tmp/config");
+        let base_dirs = BaseDirs::new().unwrap();
+
+        let my_file = base_dirs
+            .config_home()
+            .write_over("hello.txt", b"Hello, World!")
             .unwrap();
 
         assert!(my_file.starts_with("/tmp/config/hello.txt"));
         std::fs::remove_file(my_file).unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn write_file_exists() {
+        set_var("XDG_CONFIG_HOME", "/tmp/config");
+        let base_dirs = BaseDirs::new().unwrap();
+
+        let my_file = base_dirs
+            .config_home()
+            .write_over("hello.txt", b"First")
+            .unwrap();
+
+        // Write using `.write`, should NOT overwrite
+        let my_file2 = base_dirs
+            .config_home()
+            .write("hello.txt", b"Second")
+            .unwrap();
+        assert_eq!(my_file, my_file2);
+
+        let content = std::fs::read(&my_file).unwrap();
+        assert_eq!(content, b"First"); // Should still be "First"
+
+        std::fs::remove_file(my_file).unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn write_file_nots_exists() {
+        set_var("XDG_CONFIG_HOME", "/tmp/config");
+        let base_dirs = BaseDirs::new().unwrap();
+
+        let path = base_dirs
+            .config_home()
+            .write("hello.txt", b"Hello, World!")
+            .unwrap();
+
+        assert!(path.starts_with("/tmp/config/hello.txt"));
+        let content = std::fs::read(&path).unwrap();
+        assert_eq!(content, b"Hello, World!");
+
+        std::fs::remove_file(path).unwrap();
     }
 }
