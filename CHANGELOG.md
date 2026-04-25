@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1](https://github.com/secana/cross-xdg/compare/v2.1.0...v2.1.1) - 2026-04-25
+
+### Other
+
+- update dependencies
+- release v2.1.0 ([#8](https://github.com/secana/cross-xdg/pull/8))
+
 ## [2.1.0](https://github.com/secana/cross-xdg/compare/v2.0.0...v2.1.0) - 2025-12-28
 
 ### Added
