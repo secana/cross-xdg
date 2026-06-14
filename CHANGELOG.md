@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2](https://github.com/secana/cross-xdg/compare/v2.1.1...v2.1.2) - 2026-06-14
+
+### Other
+
+- auto-approve and auto-merge Dependabot PRs ([#10](https://github.com/secana/cross-xdg/pull/10))
+- auto-approve and auto-merge Dependabot PRs
+
 ## [2.1.1](https://github.com/secana/cross-xdg/compare/v2.1.0...v2.1.1) - 2026-04-25
 
 ### Other
