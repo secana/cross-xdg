@@ -15,4 +15,4 @@ documentation = "https://docs.rs/cross-xdg"
 [dependencies]
 
 [dev-dependencies]
-serial_test = "3.4"
+serial_test = "4.0"
